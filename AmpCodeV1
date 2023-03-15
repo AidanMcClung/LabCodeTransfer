@@ -1,0 +1,102 @@
+int activePins[] = {A0,A1,A2,A3,A4,A5,A6,A7,A8,A9};
+int RKs[] = {1600,1600,1600,1600,1600,1600,1600,1600,1600};
+int lenPins = 9; // this should be the length of the array above.
+
+//Functions must be declared before they are used...?
+float toV(int value){
+  // Convert the analog reading (which goes from 0 to 1023) to a voltage (between 0 and 5V):
+  //float voltage = sensorValue * (5.0 / 1023.0);
+  //float voltage0 = toV(sensor0);
+  float voltage = value * (5.0/1023.0);
+  return voltage;
+}
+
+float getR(float voltage){
+  float Vo = voltage;
+  float Rk = 1200;
+  float Rn = 820;
+  float Rm = 1200;
+  float R3 = 12000;
+  float R1 = 1600;
+  float Vm = 5.0*(Rn/(Rn+Rm));
+  float nume = Rk*R1*Vo/R3 + Rk*Vm;
+  float denom = 5.0 - Vm - (R1*Vo/R3);
+  return nume/denom;
+}
+
+float badAprxT(float resist){
+  //bad callendar-van dusen eqn:
+  //R(T) = R(0){1+alp[T + delt(T/100)(1-(t/100)) +bet(T/100)**3(1-T/100)]}
+  //R(T) = R(0)(1+alp(T))
+  // R(0) should be 1000 Ohms based on preliminary examinations
+  // alpha should be 0.00385 1/degC
+  //R = Ro + RoAT -> T = R-Ro/RoA
+  float badT = (resist - 1000)/(1000*0.00385);
+  return badT;
+}
+
+float defaultAprxT(float resist){
+    float R0 = 1000;
+    float a = 0.00385;
+    float d = 1.5;
+    float b = 0.1086;
+    //return R0*(1+a*(T))
+    //return R0*(1+a*(T + d*(T/100)*(1-T/100)))
+    float T = R0*(1+a*(T + d*(T/100)*(1-T/100) + b*((T/100)**3)*(1-T/100) ));
+    return T;
+}
+
+void setup() { 
+  
+  Serial.begin(9600);
+  //tCount = 0;
+  
+  //Serial.println("start");                // a personal quirk
+} 
+
+void loop(){
+    String outputLine = "";
+    String outputLineV = "";
+    String outputLineR = "";
+    String outputLineT = "";
+    int values[lenPins];// = new int[lenPins];
+    int voltages[lenPins];
+    int resists[lenPins];
+    int temps[lenPins];
+    
+    //increment time counter
+    tCount++;
+    int timeVal = millis();
+    outputLine += "t:" + String(tCount) + ", ";
+    outputLineV += "t:" + String(tCount) + ", ";
+    outputLineR += "t:" + String(tCount) + ", ";
+    outputLineT += "t:" + String(tCount) + ", ";
+    
+    for (int i = 0; i<= lenPins; i++){
+      //read the input on the ith input pin.
+      values[i] = analogRead(activePins[i]);
+      
+      //add it's value to the output:
+      //outputLine += "Pin" + String(i) + ":" + String(values[i]) + ", ";
+      
+      //Convert it to a voltage and add that to the output:
+      voltages[i] = toV(values[i]);
+      //outputLineV += "Pin" + String(i) + ":" + String(voltages[i]) + ", ";
+      
+      //Convert it to a resistance and add that to the output:
+      resists[i] = getR(voltages[i],i);
+      //outputLineR += "Pin" + String(i) + ":" + String(resists[i]) + ", ";
+      Serial.Print(String(temps[i] + ",");
+      
+      //Convert R to a T based on rough aprx and add that to the output:
+      temps[i] = badAprxT(resists[i]);
+      //temps[i] = defaultAprxT(resists[i]);
+      //outputLineT += "Pin" + String(i) + ":" + String(temps[i]) + ", ";
+      //outputLineT += String(temps[i] + ",";
+      //Serial.Print(String(temps[i] + ",");
+      
+      //Serial.Print(outputLineT);
+    }
+    Serial.Println("t="+String(timeVal));
+  }
+}
