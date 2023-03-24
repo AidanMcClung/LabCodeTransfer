@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import requests
 
 MAR23QUAD = np.array(
     [[-30.535,1.254,4.326],
@@ -12,6 +13,11 @@ MAR23QUAD = np.array(
      [-40.698,7.546,3.647]])
 
 LastUpdate = "Mar 23, 2023 22:00"
+
+def installCaliPtsFile():
+    url = 'https://github.com/AidanMcClung/LabCodeTransfer/blob/main/MpembaCaliPts.npy?raw=true'
+    r = requests.get(url, allow_redirects=True)
+    open("MpembaCaliPts.npy", 'wb').write(r.content)
 
 def getBestCaliAll():
     """Returns the current best calibration availble for all sensors.
